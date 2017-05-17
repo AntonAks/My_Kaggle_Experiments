@@ -1,7 +1,7 @@
 ---
-title: "Basic Income Survey (Base exploring)"
+title: "Basic Income Survey (part 1.)"
 author: 'Anton Aksyonov'
-date: '15.05.2017'
+date: 'may 2017'
 output:
   html_document:
     number_sections: true
@@ -11,8 +11,10 @@ output:
     theme: yeti
     highlight: textmate
 ---
+# Intro
+The current work was carried out to study the data and interpret the result of the study that was conducted by Dalia Research in April 2016
 
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE, include=FALSE}
 library(data.table)
 library(ggplot2)
 library(plotly)
@@ -20,9 +22,13 @@ library(plotly)
 income_data <- fread(paste0(getwd(),"/basic_income_dataset_dalia.csv"))
 ```
 
+# Who are our respondents?
+## Age, gender & education
+The distribution of respondents by age among men and women is almost the same.
 ```{r, message=FALSE, warning=FALSE}
 # DISTRIBUSION BY AGE + GENDER
 ggplot(data = income_data, aes(x = age)) + 
+  ggtitle('The distribution of respondents by age') +
   geom_histogram(aes(y = ..density..)
                  ,col = 'black'
                  ,fill = 'white') +
@@ -31,58 +37,154 @@ ggplot(data = income_data, aes(x = age)) +
 
 ```
 
+Noticeably a slight shift towards men.
 ```{r, message=FALSE, warning=FALSE}
-# DISTRIBUSION BY AGE + RURAL
-ggplot(data = income_data, aes(x = age)) + 
-  geom_histogram(aes(y = ..density..)
-                 ,col = 'black'
-                 ,fill = 'white') +
-  geom_density(alpha = 0.2, fill='#FF6666') + 
-  facet_grid(rural ~.)
-
+# DISTRIBUSION BY GENDER (SHARE)
+ggplotly(
+ggplot(data = income_data, aes(x = age, fill = gender)) + 
+  ggtitle('Share distribution by male and female') +
+  labs(x = 'Age', y = 'Share of gender') +
+  geom_histogram(position = 'fill', alpha=0.7, binwidth = 1) + 
+  scale_x_continuous(breaks=seq(10 , max(income_data[,age]), 5)) + 
+  geom_hline(aes(yintercept = 0.5), colour="white")
+)
 ```
 
-```{r, message=FALSE, warning=FALSE, results='hide'}
-# DISTRIBUSION BY AGE + EDUCATION
+How did the respondents share the presence of children?
+```{r, message=FALSE, warning=FALSE}
+ggplotly(
+ggplot(data = income_data, aes(x = age, fill = dem_has_children)) + 
+  ggtitle('Share distribution by presence of children  (male and female)') +
+  labs(x = 'Age', y = 'Share presence of children') +
+  geom_histogram(position = 'fill', alpha=0.7, binwidth = 1) + 
+  scale_x_continuous(breaks=seq(10 , max(income_data[,age]), 5)) + 
+  geom_hline(aes(yintercept = 0.5), colour="white") + 
+  facet_grid(gender ~ .)
+)
+```
 
+
+## What about education?
+
+I changed the name of the attributes in the field `dem_education_level`, to rank these parameters.
+```{r, message=FALSE, warning=FALSE, results='hide'}
 income_data[dem_education_level == 'no', dem_education_level:="no"]
 income_data[dem_education_level == 'low', dem_education_level:="3. low"]
 income_data[dem_education_level == 'medium', dem_education_level:="2. medium"]
 income_data[dem_education_level == 'high', dem_education_level:="1. high"]
 ```
 
+Now let's see how our correspondents are distributed by age and level of education
 ```{r,, message=FALSE, warning=FALSE}
 ggplotly(
   ggplot(data = income_data, aes(x = age, fill = dem_education_level)) + 
+    ggtitle('Distribusion by age and level of education') + 
+    labs(x = 'Number fo respondents', y = 'Share') + 
     geom_histogram(bins = 50
-                 ,col = 'black'
                  ,alpha = 0.7)
 )
 ```
-
+Let's look at the share of distribution. The majority of respondents have medium and higher education.
 ```{r, message=FALSE, warning=FALSE}
 ggplotly(
   ggplot(data = income_data, aes(x = age, fill = dem_education_level)) + 
+    ggtitle('Share of education level by age group') + 
+    labs(x = 'Age Group', y = 'Share') + 
     geom_histogram(bins = 50
                    ,position = "fill"
-                   ,col = 'black'
-                   ,alpha = 0.5)
+                   ,alpha = 0.7)
 )
 ```
 
+Let's see how the share of the education level is distributed according to the age category of the respondents.
 ```{r, message=FALSE, warning=FALSE}
-prop.table(table(income_data$dem_education_level, income_data$age_group),margin = 2)
-prob_t <-  data.table(prop.table(table(income_data$dem_education_level, income_data$age_group),margin = 2))
-
-names(prob_t) <- c('dem_education_level', 'age_group', 'probability')
+round(prop.table(table(income_data$dem_education_level, income_data$age_group),margin = 2),2)
+temp_t <-  data.table(round(prop.table(table(income_data$dem_education_level, income_data$age_group),margin = 2),2))
+names(temp_t) <- c('dem_education_level', 'age_group', 'prop')
 ```
-
+Now let's display the shares on the bar-plot
 ```{r, message=FALSE, warning=FALSE}
 ggplotly(
-ggplot(data = prob_t, aes(x = age_group, y = probability, fill = dem_education_level)) + 
+ggplot(data = temp_t, aes(x = age_group, y = prop, fill = dem_education_level)) + 
+  ggtitle('Share of education level by age group') + 
+  labs(x = 'Age Group', y = 'Share') + 
   geom_bar(stat = 'identity'
            ,alpha=0.7
            ,col = 'black')
 )
 
 ```
+Does the level of education affect the availability of regular work?
+
+```{r,, message=FALSE, warning=FALSE}
+round(prop.table(table(income_data$dem_education_level, income_data$dem_full_time_job),1),2)
+temp_t <- data.table(round(prop.table(table(income_data$dem_education_level, income_data$dem_full_time_job),1),2))
+names(temp_t) <- c('dem_education_level', 'dem_full_time_job', 'prop')
+```
+
+```{r,, message=FALSE, warning=FALSE}
+ggplotly(
+ggplot(data = temp_t, aes(x = dem_education_level, y = prop, fill = dem_full_time_job)) + 
+  ggtitle('The proportion of respondents with a full time job,\n by education level') + 
+  labs(x = 'Education level', y = 'Share') + 
+  geom_bar(stat = 'identity'
+           ,alpha=0.7
+           ,col = 'black')
+ 
+)
+```
+# Questions
+For convenience, I will shorten field names with questions.
+```{r, message=FALSE, warning=FALSE, results='hide'}
+setnames(income_data
+         , old = c(c('question_bbi_2016wave4_basicincome_awareness'
+                     ,'question_bbi_2016wave4_basicincome_vote'
+                     ,'question_bbi_2016wave4_basicincome_effect'
+                     ,'question_bbi_2016wave4_basicincome_argumentsfor'
+                     ,'question_bbi_2016wave4_basicincome_argumentsagainst'))
+         , new = c(c('awareness'
+                     ,'vote'
+                     ,'effect'
+                     ,'argumentsfor'
+                     ,'argumentsagainst')))
+# Numeric variable for aggregating the number of respondents
+income_data$n <- 1
+```
+
+## How familiar are you with the concept known as “basic
+income”? 
+Prepare the data to analyze the results of the first question
+```{r, message=FALSE, warning=FALSE, results='hide'}
+temp_t_plot <- income_data[,.('num_ans' = sum(n)), by = c('awareness','gender', 'age_group', 'dem_education_level')]
+unique(temp_t_plot$awareness)
+
+temp_t_plot[awareness == "I understand it fully", awareness:=paste0('1.',"I understand it fully")]
+temp_t_plot[awareness == "I know something about it", awareness:=paste0('2.',"I know something about it")]
+temp_t_plot[awareness == "I have heard just a little about it", awareness:=paste0('3.',"I have heard just a little about it")]
+temp_t_plot[awareness == "I have never heard of it", awareness:=paste0('4.',"I have never heard of it")]
+
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(data = temp_t_plot, aes(x = dem_education_level, y = num_ans, fill = awareness)) + 
+  ggtitle('How familiar are you with the concept known as “basic
+income”?') +
+  labs(x = 'Education level', y = 'Number of respondents') + 
+  geom_bar(stat = 'identity') + facet_grid(gender ~ age_group) + 
+  theme(axis.text.x = element_text(angle=45, vjust=0.5, size=8)) + 
+  theme(legend.position = 'bottom'
+        , legend.text = element_text(size = 7))
+```
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(data = temp_t_plot, aes(x = dem_education_level, y = num_ans, fill = awareness)) + 
+  ggtitle('How familiar are you with the concept known as “basic
+income”?') +
+  labs(x = 'Education level', y = 'Share of respondents') + 
+  geom_bar(stat = 'identity', position = 'fill') + facet_grid(gender ~ age_group) + 
+  theme(axis.text.x = element_text(angle=45, vjust=0.5, size=8)) + 
+  theme(legend.position = 'bottom'
+        , legend.text = element_text(size = 7))
+```
+To be continue...

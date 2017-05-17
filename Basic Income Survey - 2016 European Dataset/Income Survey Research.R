@@ -50,10 +50,11 @@ prob_t <-  data.table(prop.table(table(income_data$dem_education_level, income_d
 
 names(prob_t) <- c('dem_education_level', 'age_group', 'probability')
 
+
+
 ggplotly(
 ggplot(data = prob_t, aes(x = age_group, y = probability, fill = dem_education_level)) + 
   geom_bar(stat = 'identity'
            ,alpha=0.7
            ,col = 'black')
 )
-
