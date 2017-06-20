@@ -1,4 +1,5 @@
 library(ggplot2)
+library(plotly)
 library(xgboost)
 library(data.table)
 library(purrr)
@@ -8,8 +9,16 @@ train_data$type <- 1
 test_data <- fread("~/R/My_Kaggle_Experiments/Mercedes-Benz Greener Manufacturing/test.csv", stringsAsFactors = T)
 test_data$type <- 0
 
+ggplotly(
+ggplot(data = train_data, aes(x = y)) + 
+  geom_histogram(bins = 100, colour = 'black', fill = 'white')
+)
 
-# 0.55592 ####
+summary(train_data$y)
+
+train_data <- train_data[y>=70 & y<=169, ]
+
+#  ####
 
 train_df_model <- train_data
 y_train <- train_df_model$y
@@ -48,32 +57,30 @@ dtest <- xgb.DMatrix(as.matrix(test_x))
 xgb_params <- list(colsample_bytree = 0.7 #how many variables to consider for each tree
                    , subsample = 0.7 #how much of the data to use for each tree
                    , booster = "gbtree"
-                   , max_depth = 10 #how many levels in the tree
-                   , eta = 0.05 #shrinkage rate to control overfitting through conservative approach
+                   , max_depth = 5 #how many levels in the tree
+                   , eta = 0.1 #shrinkage rate to control overfitting through conservative approach
                    , eval_metric = "rmse" 
                    , objective = "reg:linear"
                    , gamma = 0
-                   , num_parallel_tree = 5
-                   )
+)
 
 #tuning
 xgbcv <- xgb.cv(params = xgb_params
-                 , data = dtrain
-                 , nrounds = 10000
-                 , nfold = 5
-                 , showsd = T
-                 , stratified = T
-                 , print.every.n = 10
-                 , early.stop.round = 20
-                 , maximize = F)
+                , data = dtrain
+                , nrounds = 10000
+                , nfold = 5
+                , showsd = T
+                , stratified = T
+                , print.every.n = 10
+                , early.stop.round = 20
+                , maximize = F)
 
 
 
 #train data
-set.seed(51)
 gb_dt <- xgb.train(params = xgb_params
                    , data = dtrain
-                   , nrounds = 102
+                   , nrounds = 53
                    , print_every_n = 10
                    , early_stopping_rounds = 10
                    , maximize = F
@@ -90,11 +97,7 @@ check_res$y_pred <- result$y
 check_res[,check:= abs(y - y_pred) / y]
 e <- mean(check_res$check)
 
-
-# Save results
-file_name <- as.character(gsub(' ','_', paste0('submission_', date(), '.csv')))
-write_csv(x = result, paste0('Mercedes-Benz Greener Manufacturing/', file_name))
-
+write_csv(x = result, 'Mercedes-Benz Greener Manufacturing/final_submission.csv')
 
 
 
