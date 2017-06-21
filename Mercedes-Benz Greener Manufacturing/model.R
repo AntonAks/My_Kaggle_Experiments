@@ -59,13 +59,13 @@ xgb_params <- list(colsample_bytree = 0.7 #how many variables to consider for ea
 #tuning
 xgbcv <- xgb.cv(params = xgb_params
                  , data = dtrain
-                 , nrounds = 10000
-                 , nfold = 5
-                 , showsd = T
-                 , stratified = T
-                 , print.every.n = 10
-                 , early.stop.round = 20
-                 , maximize = F)
+                 ,nrounds = 100
+                , nfold = 5
+                , showsd = T
+                , stratified = T
+                , print.every.n = 10
+                , early.stop.round = 20
+                , maximize = F)
 
 
 

@@ -3,6 +3,7 @@ library(plotly)
 library(xgboost)
 library(data.table)
 library(purrr)
+library(readr)
 
 train_data <- fread("~/R/My_Kaggle_Experiments/Mercedes-Benz Greener Manufacturing/train.csv", stringsAsFactors = T)
 train_data$type <- 1
@@ -14,11 +15,6 @@ ggplot(data = train_data, aes(x = y)) +
   geom_histogram(bins = 100, colour = 'black', fill = 'white')
 )
 
-summary(train_data$y)
-
-train_data <- train_data[y>=70 & y<=169, ]
-
-#  ####
 
 train_df_model <- train_data
 y_train <- train_df_model$y
@@ -54,33 +50,33 @@ dtest <- xgb.DMatrix(as.matrix(test_x))
 
 
 ##xgboost parameters
-xgb_params <- list(colsample_bytree = 0.7 #how many variables to consider for each tree
-                   , subsample = 0.7 #how much of the data to use for each tree
-                   , booster = "gbtree"
-                   , max_depth = 5 #how many levels in the tree
-                   , eta = 0.1 #shrinkage rate to control overfitting through conservative approach
-                   , eval_metric = "rmse" 
+xgb_params <- list(booster = "gbtree" 
                    , objective = "reg:linear"
-                   , gamma = 0
+                   , eta=0.01 # 0.005 - BEST
+                   , gamma=0
+                   , max_depth=4 
+                   , subsample=0.95
+                   , min_child_weight = 3 # ??? try to comment
+                   , base_score=mean(y_train)
 )
 
 #tuning
-xgbcv <- xgb.cv(params = xgb_params
-                , data = dtrain
-                , nrounds = 10000
-                , nfold = 5
-                , showsd = T
-                , stratified = T
-                , print.every.n = 10
-                , early.stop.round = 20
-                , maximize = F)
+xgbcv <- xgb.cv(params = xgb_params,
+                data = dtrain,
+                nrounds = 1000,
+                nfold = 5,
+                print_every_n = 10, 
+                early_stopping_rounds = 20,
+                maximize = F,
+                prediction = F)
 
 
 
 #train data
+set.seed(12)
 gb_dt <- xgb.train(params = xgb_params
                    , data = dtrain
-                   , nrounds = 53
+                   , nrounds = 380
                    , print_every_n = 10
                    , early_stopping_rounds = 10
                    , maximize = F
