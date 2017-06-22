@@ -1,0 +1,42 @@
+---
+title: "Wine Reviews with Plotly package"
+author: 'Anton Aksyonov'
+date: 'may 2017'
+output:
+  html_document:
+    number_sections: true
+    toc: true
+    fig_width: 8
+    fig_height: 4.5
+    theme: yeti
+    highlight: textmate
+---
+
+```{r, message=FALSE, warning=FALSE}
+library(plotly)
+library(data.table)
+
+wine_data <- fread("~/R/My_Kaggle_Experiments/Wine Reviews/winemag-data_first150k.csv")
+wine_data$n <- 1
+```
+
+
+
+```{r}
+
+w <- wine_data[,.('n' = sum(n)),by = country]
+
+plot_ly(data = w[order(-n)]
+        , type = 'bar'
+        , x=~reorder(country, -n)  
+        , y=~n
+        , color = )
+        
+
+plot_ly(data = wine_data
+        , type = 'histogram'
+        , x=~price)
+
+
+```
+
